@@ -9,6 +9,7 @@ import (
 )
 
 type RemoteList struct {
+	mu_json sync.Mutex
 	mu []sync.Mutex
 	matriz [][]int
 }
@@ -26,7 +27,7 @@ func (l *RemoteList) Append(args []interface{}, reply *int) error {
 	fmt.Println("Cliente: ", list_id)
 	fmt.Println("Lista: ", l.matriz[list_id])
 	fmt.Println("")
-	l.UpdateJson()
+	go l.UpdateJson()
 	*reply = value
 	return nil
 }
@@ -56,7 +57,7 @@ func (l *RemoteList) Remove(list_id int, reply *int) error {
 		fmt.Println("Lista: ", l.matriz[list_id])
 		fmt.Println("")
 		*reply = l.matriz[list_id][len(l.matriz[list_id])-1]
-		l.UpdateJson()
+		go l.UpdateJson()
 	} else {
 		return errors.New("empty list")
 	}
@@ -90,6 +91,8 @@ func (l *RemoteList) LoadMatriz() error {
 }
 
 func (l *RemoteList) UpdateJson() error {
+	l.mu_json.Lock()
+	defer l.mu_json.Unlock()
 	jsonData, err := json.Marshal(l.matriz)
 	if err != nil {
 		return err
